@@ -82,6 +82,12 @@
     #ultBtn{left:6px;bottom:10px;z-index:9;font-size:13px;padding:9px 10px;}
     #tut{top:100px;}
   }
+  /* 태블릿 세로(561~1024px): 붓 7~9개면 씨앗바가 폭을 거의 채워 필살기 버튼이 1·2번 붓을 가림 → 같은 예약 칸, 붓 칸은 조금 좁게 */
+  @media (min-width:561px) and (max-width:1024px){
+    #seedBar{padding-left:116px;gap:4px;}
+    .seedBtn{min-width:64px;padding:6px 4px 5px;}
+    #ultBtn{left:6px;bottom:10px;z-index:9;width:104px;white-space:nowrap;font-size:13px;padding:9px 6px;}
+  }
   /* 브리핑 책 */
   #book{position:relative;width:min(720px,94vw);max-height:76vh;background:linear-gradient(180deg,#faf1d8,#efdcb4);border-radius:10px 16px 16px 10px;box-shadow:0 20px 54px rgba(0,0,0,.4), inset 0 0 0 2px #d9c79a;padding:24px 30px 22px 38px;color:#3a2c12;overflow:auto;border-left:10px solid #8a6d2f;}
   #book:before{content:"";position:absolute;top:14px;bottom:14px;left:0;width:6px;background:linear-gradient(180deg,#7a5f28,#a98a45);border-radius:4px;}
@@ -1335,15 +1341,16 @@ window.HAN = (function () {
     var famsAll = Object.keys((D() && D().FAMILIES) || {});
     var pool = (((D() && D().QUIZ) || {})[ch.id] || []).slice();
     // ① 뜻 고르기: 장 어휘 최대 8개, 보기 4개. 오답은 '다른 계열'의 순화어만(같은 계열 유의어 = 복수정답 방지)
-    var QT = { geo: "’를 고운 말로 바꾸면?", maj: "’를 바르게 쓰면?" };
-    function ye(t) { var ch = t.charCodeAt(t.length - 1); return (ch >= 0xAC00 && ch <= 0xD7A3 && (ch - 0xAC00) % 28 > 0) ? "이에요" : "예요"; } // 받침 유무 → 이에요/예요
+    var QT = { geo: " 고운 말로 바꾸면?", maj: " 바르게 쓰면?" };
+    function jo(t, a, b) { var ch = t.charCodeAt(t.length - 1); return (ch >= 0xAC00 && ch <= 0xD7A3 && (ch - 0xAC00) % 28 > 0) ? a : b; } // 받침 유무 → 을/를·은/는
+    function ye(t) { return jo(t, "이에요", "예요"); }
     var words = shuffleArr(mine.slice());
     for (var k = 0; k < words.length && k < 8; k++) {
       var w = words[k];
       var dis = shuffleArr(W.filter(function (x) { return x.id !== w.id && x.family !== w.family && x.good !== w.good; }).map(function (x) { return x.good; }));
       var seenT = {}; seenT[w.good] = 1; var opts = [{ t: w.good, ok: true }];
       for (var d2 = 0; d2 < dis.length && opts.length < 4; d2++) { if (!seenT[dis[d2]]) { seenT[dis[d2]] = 1; opts.push({ t: dis[d2], ok: false }); } }
-      pool.push({ q: "‘" + w.bad + (QT[w.family] || "’를 바른 우리말로 하면?"), options: opts, why: "‘" + w.bad + "’는 ‘" + w.good + "’" + ye(w.good) + "." + (w.tip ? " 💡 " + w.tip : ""), wid: w.id });
+      pool.push({ q: "‘" + w.bad + "’" + jo(w.bad, "을", "를") + (QT[w.family] || " 바른 우리말로 하면?"), options: opts, why: "‘" + w.bad + "’" + jo(w.bad, "은", "는") + " ‘" + w.good + "’" + ye(w.good) + "." + (w.tip ? " 💡 " + w.tip : ""), wid: w.id });
     }
     // ② 계열 판별형(경계어 famQuiz:false 제외): 이 오염어는 어떤 종류? (보기 4개)
     var fw = shuffleArr(mine.filter(function (x) { return x.famQuiz !== false; })).slice(0, 3);
@@ -1351,7 +1358,7 @@ window.HAN = (function () {
       var w2 = fw[f2], others = shuffleArr(famsAll.filter(function (x) { return x !== w2.family; })).slice(0, 3);
       var o2 = [{ t: famName(w2.family), ok: true }];
       for (var o3 = 0; o3 < others.length; o3++) o2.push({ t: famName(others[o3]), ok: false });
-      pool.push({ q: "‘" + w2.bad + "’는 어떤 종류의 오염어일까요?", options: o2, why: "‘" + w2.bad + "’는 " + famName(w2.family) + " 계열 — 바른말은 ‘" + w2.good + "’!", wid: w2.id });
+      pool.push({ q: "‘" + w2.bad + "’" + jo(w2.bad, "은", "는") + " 어떤 종류의 오염어일까요?", options: o2, why: "‘" + w2.bad + "’" + jo(w2.bad, "은", "는") + " " + famName(w2.family) + " 계열 — 바른말은 ‘" + w2.good + "’!", wid: w2.id });
     }
     // 약한 낱말(SRS) 우선 출제
     pool = shuffleArr(pool);
@@ -1835,6 +1842,7 @@ window.HAN_UI = (function () {
   function el(id) { return document.getElementById(id); }
   function D() { return window.HAN_DATA; }
   function shuf(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function ye(t) { var ch = t.charCodeAt(t.length - 1); return (ch >= 0xAC00 && ch <= 0xD7A3 && (ch - 0xAC00) % 28 > 0) ? "이에요" : "예요"; } // 받침 유무 → 이에요/예요
   function seedIcon(g) {
     var IMG = window.HAN_IMG || {}, k = "plant_" + g.id;
     if (IMG[k]) return '<img src="' + IMG[k] + '" alt="" style="width:32px;height:32px;object-fit:contain;display:block;margin:0 auto">';
@@ -2130,7 +2138,7 @@ window.HAN_UI = (function () {
           if (!norm(v)) return; // 빈 입력 → 채점하지 않음
           var okW = norm(v) === norm(pick.good);
           HAN.noteWord(pick.id, okW);
-          if (fb) fb.innerHTML = '<p class="sub" style="margin:.4em 0 0">' + (okW ? '🌟 정확해요! ‘' + pick.good + '’' + (isMaj ? ' — 띄어쓰기까지 맞았어요!' : ' — 멋진 우리말 지킴이!') : '💡 바른말은 ‘<b>' + pick.good + '</b>’이에요. 따라 써 볼까요?') + '</p>';
+          if (fb) fb.innerHTML = '<p class="sub" style="margin:.4em 0 0">' + (okW ? '🌟 정확해요! ‘' + pick.good + '’' + (isMaj ? ' — 띄어쓰기까지 맞았어요!' : ' — 멋진 우리말 지킴이!') : '💡 바른말은 ‘<b>' + pick.good + '</b>’' + ye(pick.good) + '. 따라 써 볼까요?') + '</p>';
           if (okW) { wDone = true; wbn.disabled = true; }
           if (window.SND) SND.play(okW ? "ding" : "hit");
         });
